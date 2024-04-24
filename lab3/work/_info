@@ -1,0 +1,79 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/akhil/Desktop/cse469/lab1
+valu
+Z1 DXx6 sv_std 3 std 0 22 AD7iAPLo6nTIKk<N0eo=D3
+!s110 1712192241
+!i10b 1
+!s100 Pd=4P=L7W]MJ0`j;QfTHh0
+IB_OnkWl=bV3Bdn13VOkM<2
+Z2 VDg1SIo80bB@j0V0VzS_@n1
+!s105 alu_sv_unit
+S1
+R0
+w1712192210
+8./alu.sv
+F./alu.sv
+L0 1
+Z3 OV;L;10.5b;63
+r1
+!s85 0
+31
+!s108 1712192241.000000
+!s107 ./alu.sv|
+!s90 -reportprogress|300|./alu.sv|
+!i113 1
+Z4 tCvgOpt 0
+vreg_file
+R1
+Z5 !s110 1712099822
+!i10b 1
+!s100 ;jAo6i6B3SD8O>oNUXPV=3
+IFAhhFI`2X^;<ZKjH4mGLW1
+R2
+!s105 reg_file_sv_unit
+S1
+R0
+w1712097376
+8./reg_file.sv
+F./reg_file.sv
+L0 1
+R3
+r1
+!s85 0
+31
+Z6 !s108 1712099822.000000
+!s107 ./reg_file.sv|
+!s90 -reportprogress|300|./reg_file.sv|
+!i113 1
+R4
+vreg_file_testbench
+R1
+R5
+!i10b 1
+!s100 210_o<63G297VW@EJFZX?0
+I;1KZddmM`5b]NmGkIJE390
+R2
+!s105 reg_file_testbench_sv_unit
+S1
+R0
+w1712097375
+8./reg_file_testbench.sv
+F./reg_file_testbench.sv
+L0 1
+R3
+r1
+!s85 0
+31
+R6
+!s107 ./reg_file_testbench.sv|
+!s90 -reportprogress|300|./reg_file_testbench.sv|
+!i113 1
+R4

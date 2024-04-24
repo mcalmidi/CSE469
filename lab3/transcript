@@ -1,0 +1,47 @@
+# Reading C:/intelFPGA_lite/17.0/modelsim_ase/tcl/vsim/pref.tcl
+do runlab.do
+# ** Warning: (vlib-34) Library already exists at "work".
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 11:29:51 on Apr 03,2024
+# vlog -reportprogress 300 ./alu.sv 
+# -- Compiling module alu
+# 
+# Top level modules:
+# 	alu
+# End time: 11:29:51 on Apr 03,2024, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 11:29:51 on Apr 03,2024
+# vlog -reportprogress 300 ./testbench.sv 
+# -- Compiling module testbench
+# ** Error (suppressible): (vlog-13215) ./testbench.sv(23): Cannot assign an unpacked type 'reg[103:0] $[1000:0]' to a packed type 'reg[101:0]'.
+# End time: 11:29:52 on Apr 03,2024, Elapsed time: 0:00:01
+# Errors: 1, Warnings: 0
+# ** Error: C:/intelFPGA_lite/17.0/modelsim_ase/win32aloem/vlog failed.
+# Error in macro ./runlab.do line 8
+# C:/intelFPGA_lite/17.0/modelsim_ase/win32aloem/vlog failed.
+#     while executing
+# "vlog "./testbench.sv""
+do runlab.do
+# ** Warning: (vlib-34) Library already exists at "work".
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 17:57:21 on Apr 03,2024
+# vlog -reportprogress 300 ./alu.sv 
+# -- Compiling module alu
+# 
+# Top level modules:
+# 	alu
+# End time: 17:57:21 on Apr 03,2024, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim - Intel FPGA Edition vlog 10.5b Compiler 2016.10 Oct  5 2016
+# Start time: 17:57:21 on Apr 03,2024
+# vlog -reportprogress 300 ./testbench.sv 
+# -- Compiling module testbench
+# ** Error (suppressible): (vlog-13215) ./testbench.sv(23): Cannot assign an unpacked type 'reg[103:0] $[1000:0]' to a packed type 'reg[101:0]'.
+# End time: 17:57:21 on Apr 03,2024, Elapsed time: 0:00:00
+# Errors: 1, Warnings: 0
+# ** Error: C:/intelFPGA_lite/17.0/modelsim_ase/win32aloem/vlog failed.
+# Error in macro ./runlab.do line 8
+# C:/intelFPGA_lite/17.0/modelsim_ase/win32aloem/vlog failed.
+#     while executing
+# "vlog "./testbench.sv""

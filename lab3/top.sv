@@ -21,12 +21,12 @@ module top(
     arm processor (
         .clk        (clk        ), 
         .rst        (rst        ),
-        .Instr      (Instr      ),
+        .InstrF      (Instr      ),
         .ReadDataM   (ReadData   ),
-        .WriteData  (WriteData  ), 
-        .PC         (PC         ), 
-        .ALUResult  (ALUResult  ),
-        .MemWrite   (MemWrite   )
+        .WriteDataM  (WriteData  ), 
+        .PCF         (PC         ), 
+        .ALUOutM  (ALUResult  ),
+        .MemWriteM   (MemWrite   )
     );
 
     // instruction memory

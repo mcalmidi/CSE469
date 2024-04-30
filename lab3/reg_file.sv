@@ -1,7 +1,7 @@
 // Akhila Narayanan and Manasvini Calmidi
-// 4/4/2024
+// 5/2/2024
 // CSE 469
-// Lab #1, Task 2
+// Lab #3
 
 // reg_file takes 1-bit clk and wr_en, 32-bit write_data, and 4-bit write_addr, 
 // read_addr1, and read_addr2 as inputs and returns 32-bit read_data1 and read_addr2

@@ -1,7 +1,7 @@
 // Akhila Narayanan and Manasvini Calmidi
-// 4/4/2024
+// 5/2/2024
 // CSE 469
-// Lab #1, Task 3
+// Lab #3
 
 // alu takes 2-bit ALUControl and 32-bit a and b as inputs and returns 32-bit Result 
 // and 4-bit ALUFlags as outputs. It can perform addition, subtraction, logical &, and 

@@ -1,5 +1,5 @@
 // Akhila Narayanan and Manasvini Calmidi
-// 4/23/2024
+// 5/4/2024
 // CSE 469
 // Lab #3
 
@@ -26,8 +26,9 @@ module arm (
 	 // Need to declare signals from later stages that are used as inputs in earlier stages
 	 
 	 // Control signals
-	 logic BranchTakenE, PCSrcW, RegWriteW;
+	 logic BranchTakenE, PCSrcW, RegWriteW, StallF, StallD, FlushD, FlushE;
 	 logic [3:0] FlagsPrime;
+	 logic [1:0] ForwardAE, ForwardBE;
 	 
 	 // Datapath buses
 	 logic [31:0] ResultW, ALUResultE;
@@ -47,22 +48,24 @@ module arm (
     logic [31:0] PCPrime, PCPlus4F;
 	 
 	 // Muxes for PCPrime and PCF
-	 logic tempF;
+	 logic [31:0] tempF;
 	 assign tempF = PCSrcW ? ResultW : PCPlus4F;
     assign PCPrime = BranchTakenE ? ALUResultE : tempF;  // mux, use either default or newly computed value
     assign PCPlus4F = PCF + 'd4;                  // default value to access next instruction
 	
     // update the PC, at rst initialize to 0
+	 // ELEPHANT looking at BNE PC 56 (we assume this is where it's breaking because the cmp before works and task 1 passed)
+	 // when StallF is high, we don't see PCF = PCPrime. Why? We literally set it here.
     always_ff @(posedge clk) begin
         if (rst) PCF <= '0;
-        else     PCF <= PCPrime;
+        else if (~StallF) PCF <= PCPrime;
     end
 	 
 	 // Fetch Pipeline Register
-	 logic [31:0] InstrD; 
+	 logic [31:0] InstrD;
 	 always_ff @(posedge clk) begin
-		if (rst) InstrD <= '0;
-		else     InstrD <= InstrF;
+		if (rst || FlushD) InstrD <= '0; // Clearing
+		else if (~StallD) InstrD <= InstrF;
 	 end
 	 
 	 
@@ -71,22 +74,22 @@ module arm (
 	 // Decode stage datapath buses and signals
 	 logic [31:0] PCPlus8D;
 	 logic [ 3:0] RA1D, RA2D;                  // regfile input addresses
-    logic [31:0] RD1D, RD2D;                  // raw regfile outputs
-    logic [31:0] ExtImmD, SrcAD, WriteDataD;        // immediate and alu inputs
+    logic [31:0] RD1DTemp, RD2DTemp, RD1D, RD2D;                  // raw regfile outputs
+    logic [31:0] ExtImmD/*, SrcAD, WriteDataD*/;        // immediate and alu inputs
 	 logic [3:0] WA3D;
 	 
 	 // Decode stage control signals
-	 logic PCSrcD, RegWriteD, MemtoRegD, MemWriteD, BranchD, ALUSrcD, FlagWriteD;
+	 logic PCSrcD, RegWriteD, MemtoRegD, MemWriteD, BranchD, ALUSrcD, FlagWriteD, NoWrite;
 	 logic [1:0] RegSrcD, ImmSrcD, ALUControlD;
 	 logic [3:0] CondD; 
 	 
 	 assign CondD = InstrD[31:28];
 	 
-	 assign PCPlus8D = PCPlus4F + 'd4;             // value read when reading from reg[15]
+	 assign PCPlus8D = PCPlus4F;             // value read when reading from reg[15]
 
     // determine the register addresses based on control signals
     // RegSrc[0] is set if doing a branch instruction
-    // RefSrc[1] is set when doing memory instructions
+    // RegSrc[1] is set when doing memory instructions
     assign RA1D = RegSrcD[0] ? 4'd15         : InstrD[19:16];
     assign RA2D = RegSrcD[1] ? InstrD[15:12] : InstrD[3:0];
 
@@ -98,9 +101,13 @@ module arm (
         .write_addr(WA3W),
         .read_addr1(RA1D), 
         .read_addr2(RA2D),
-        .read_data1(RD1D), 
-        .read_data2(RD2D)
+        .read_data1(RD1DTemp), 
+        .read_data2(RD2DTemp)
     );
+	 
+	 // Fakeo port for R15
+	 assign RD1D = (RA1D == 4'd15) ? PCPlus8D : RD1DTemp;
+	 assign RD2D = (RA2D == 4'd15) ? PCPlus8D : RD2DTemp;
 
     // two muxes, put together into an always_comb for clarity
     // determines which set of instruction bits are used for the immediate
@@ -109,10 +116,6 @@ module arm (
         else if (ImmSrcD == 'b01) ExtImmD = {20'b0, InstrD[11:0]};                 // 12 bit immediate - mem operations
         else                     ExtImmD = {{6{InstrD[23]}}, InstrD[23:0], 2'b00}; // 24 bit immediate - branch operation
     end
-	 
-	 // ELEPHANT when making hazard unit, get rid of writeDataD and SrcAD (muxes will handle this)
-	 assign WriteDataD = (RA2D == 'd15) ? PCPlus8D : RD2D;           // substitute the 15th regfile register for PC 
-	 assign SrcAD = (RA1D == 'd15) ? PCPlus8D : RD1D; // substitute the 15th regfile register for PC
 	 
 	 assign WA3D = InstrD[15:12];
 	 
@@ -124,16 +127,17 @@ module arm (
 	 logic [3:0] CondE, FlagsE; // FlagsE is FlagsReg (4 bits)
 	 
 	 // Execute stage datapath buses
-	 logic [31:0] SrcAE, RD2E, ExtImmE, WriteDataE;
-	 logic [3:0] WA3E;
+	 logic [31:0] RD1E, RD2E, ExtImmE;
+	 logic [3:0] WA3E, RA1E, RA2E;
 	 always_ff @(posedge clk) begin
-		if (rst) begin
-			SrcAE <= '0; 
+		if (rst || FlushE) begin // Clearing
+			RA1E <= '0;
+			RA2E <= '0;
+			RD1E <= '0; 
 			RD2E <= '0;
-			WriteDataE <= '0;
 			WA3E <= 0;
 			ExtImmE <= '0;
-			
+
 			PCSrcE <= 0;
 			RegWriteE <= 0;
 			MemtoRegE <= 0;
@@ -146,9 +150,10 @@ module arm (
 			FlagsE <= '0;
 		end
 		else begin
-			SrcAE <= RD1D; 
+			RA1E <= RA1D;
+			RA2E <= RA2D;
+			RD1E <= RD1D; 
 			RD2E <= RD2D;
-			WriteDataE <= WriteDataD;
 			WA3E <= WA3D;
 			ExtImmE <= ExtImmD;
 			
@@ -161,19 +166,53 @@ module arm (
 			FlagWriteE <= FlagWriteD;
 			ALUControlE <= ALUControlD;
 			CondE <= CondD;
-			FlagsE <= FlagsPrime;
+			if (FlagWriteE) FlagsE <= FlagsPrime; // if we are comparing, we want to update FLagsE
 		end
 	 end
 	 
 	 // EXECUTE STAGE 
 	 
-	 // ELEPHANT when making hazard unit, add muxes
-	 
 	 // Execute stage datapath buses and signals
 	 logic [ 3:0] ALUFlags;                  // alu combinational flag outputs
-	 logic [31:0] SrcBE;
+	 logic [31:0] SrcAE, SrcBETemp, SrcBE, WriteDataE;
     
-	 assign SrcBE = ALUSrcE ? ExtImmE : WriteDataE;     // determine alu operand to be either from reg file or from immediate
+	 // Fancy 2-bit muxes for SrcA and SrcB
+	 always_comb begin
+		case (ForwardAE)
+			2'b00 : begin
+				SrcAE = RD1E;
+			end
+			2'b01 : begin
+				SrcAE = ResultW;
+			end
+			2'b10 : begin
+				SrcAE = ALUOutM;
+			end
+			default : begin
+				SrcAE = '0;
+			end
+		endcase
+	 end
+	 
+	 always_comb begin
+		case (ForwardBE)
+			2'b00 : begin
+				SrcBETemp = RD2E;
+			end
+			2'b01 : begin
+				SrcBETemp = ResultW;
+			end
+			2'b10 : begin
+				SrcBETemp = ALUOutM;
+			end
+			default : begin
+				SrcBETemp = '0;
+			end
+		endcase
+	 end
+
+	 assign WriteDataE = SrcBETemp;
+	 assign SrcBE = ALUSrcE ? ExtImmE : SrcBETemp;     // determine alu operand to be either from reg file or from immediate
 
     // Hook up inputs and outputs of alu module (from Lab 1) 
     alu u_alu (
@@ -186,12 +225,8 @@ module arm (
 	 
 	 // COND UNIT
 	 
-	 // Write contents of ALUFlags to FlagsPrime if we're executing the CMP command (FlagWrite == 1)
-	 always_ff @(posedge clk)
-	 begin
-		if (rst) FlagsPrime <= 4'b0000; // Default
-		else if (FlagWriteE) FlagsPrime <= ALUFlags;
-	 end
+	 // Write contents of ALUFlags to FlagsPrime
+	 assign FlagsPrime = ALUFlags;
 	 
 	 // Sets IsCond control signal if instruction is conditional
 	 logic IsCond;
@@ -215,7 +250,7 @@ module arm (
 	 end
 	 
 	 logic CondExE;
-	 assign CondExE = Valid || ~IsCond;
+	 assign CondExE = Valid | ~IsCond; // the condition is met
 	 
 	 // AND gates after Cond Unit
 	 logic PCSrcETemp, RegWriteETemp, MemWriteETemp;
@@ -294,6 +329,42 @@ module arm (
 
     // determine the result to run back to PC or the register file based on whether we used a memory instruction
 	 assign ResultW = MemtoRegW ? ReadDataW : ALUOutW;    // determine whether final writeback result is from dmemory or alu
+	 
+	 
+	 // HAZARD UNIT ELEPHANT
+	 
+	 // Data Forwarding Logic
+	 logic Match_1E_M, Match_2E_M, Match_1E_W, Match_2E_W, Match_WriteAddrs;
+	 
+	 // Execute stage register matches Memory stage register
+	 assign Match_1E_M = (RA1E == WA3M);
+	 assign Match_2E_M = (RA2E == WA3M);
+	 
+	 // Execute stage register matches Writeback stage register
+	 assign Match_1E_W = (RA1E == WA3W);
+	 assign Match_2E_W = (RA2E == WA3W);
+	 
+	 // Determine values of ForwardAE and ForwardBE
+	 always_comb begin
+		if (Match_1E_M & RegWriteM) ForwardAE = 2'b10;
+		else if (Match_1E_W & RegWriteW) ForwardAE = 2'b01;
+		else ForwardAE = 2'b00;
+		
+		if (Match_2E_M & RegWriteM) ForwardBE = 2'b10;
+		else if (Match_2E_W & RegWriteW) ForwardBE = 2'b01;
+		else ForwardBE = 2'b00;
+	 end
+	 
+	 // Stalling Logic
+	 logic Match_12D_E, ldrstall, PCWrPendingF;
+	 
+	 assign Match_12D_E = (RA1D == WA3E) | (RA2D == WA3E);
+	 assign ldrstall = Match_12D_E & MemtoRegE;
+	 assign PCWrPendingF = PCSrcD | PCSrcE | PCSrcM; // ELEPHANT only useful when writing to PC register within a single instruction. Useless because we don't handle these instrs
+	 assign StallF = ldrstall | PCWrPendingF;
+	 assign StallD = ldrstall;
+	 assign FlushD = PCWrPendingF | PCSrcW | BranchTakenE;
+	 assign FlushE = ldrstall | BranchTakenE;
 
 
     /* The control conists of a large decoder, which evaluates the top bits of the instruction and produces the control bits 
@@ -322,6 +393,7 @@ module arm (
                 ImmSrcD   = 'b00; 
                 ALUControlD = 'b00;
 					 FlagWriteD = 0;
+					 NoWrite = 0;
             end
 
             // SUB (Imm or Reg)
@@ -336,6 +408,7 @@ module arm (
                 ImmSrcD   = 'b00; 
                 ALUControlD = 'b01;
 					 FlagWriteD = 0;
+					 NoWrite = 0;
             end
 
             // AND
@@ -350,6 +423,7 @@ module arm (
                 ImmSrcD   = 'b00;    // doesn't matter
                 ALUControlD = 'b10; 
 					 FlagWriteD = 0;
+					 NoWrite = 0;
             end
 
             // ORR
@@ -364,6 +438,7 @@ module arm (
                 ImmSrcD   = 'b00;    // doesn't matter
                 ALUControlD = 'b11;
 					 FlagWriteD = 0;
+					 NoWrite = 0;
             end
 
             // LDR
@@ -378,6 +453,7 @@ module arm (
                 ImmSrcD   = 'b01; 
                 ALUControlD = 'b00;  // do an add
 					 FlagWriteD = 0;
+					 NoWrite = 0;
             end
 
             // STR
@@ -392,21 +468,22 @@ module arm (
                 ImmSrcD   = 'b01; 
                 ALUControlD = 'b00;  // do an add
 					 FlagWriteD = 0;
+					 NoWrite = 0;
             end
 				
             // B, now has logic for conditional and unconditional branching
             8'b1010_???? : begin
-						  if (CondExE) PCSrcD = 1; // unconditional OR conditional + valid
-						  else PCSrcD = 0; // invalid conditional branching
+						  PCSrcD = 0;
                     MemtoRegD = 0;
                     MemWriteD = 0; 
                     ALUSrcD   = 1;
-                    RegWriteD = 0;
+                    RegWriteD = ~NoWrite;
 						  BranchD   = 1;
                     RegSrcD   = 'b01;
                     ImmSrcD   = 'b10; 
                     ALUControlD = 'b00;  // do an add
 						  FlagWriteD = 0;
+						  NoWrite = 0;
             end
 				
 				// CMP
@@ -421,6 +498,7 @@ module arm (
                 ImmSrcD   = 'b00; 
                 ALUControlD = 'b01;
 					 FlagWriteD = 1;
+					 NoWrite = 1;
             end
 
 			default: begin
@@ -434,6 +512,7 @@ module arm (
 				   ImmSrcD   = 'b00; 
 				   ALUControlD = 'b00;  // do an add
 				   FlagWriteD = 0;
+					NoWrite = 0;
 			end
         endcase
     end

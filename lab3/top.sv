@@ -1,3 +1,8 @@
+// Akhila Narayanan and Manasvini Calmidi
+// 5/4/2024
+// CSE 469
+// Lab #3
+
 /* top is a structurally made toplevel module. It consists of 3 instantiations, as well as the signals that link them. 
 ** It is almost totally self-contained, with no outputs and two system inputs: clk and rst. clk represents the clock 
 ** the system runs on, with one instruction being read and executed every cycle. rst is the system reset and should 
@@ -84,8 +89,12 @@ module testbench();
 //        else                                                 $display("Task 1 Failed");
 
         // task 2:
-        assert(cpu.processor.u_reg_file.memory[8] == 32'd1)  $display("Task 2 Passed");
-        else                                                 $display("Task 2 Failed");
+//        assert(cpu.processor.u_reg_file.memory[8] == 32'd1)  $display("Task 2 Passed");
+//        else                                                 $display("Task 2 Failed");
+
+		  // task 3:
+//			assert(cpu.processor.u_reg_file.memory[2] == 32'd0)  $display("Task 3 Passed");
+//			else                                                 $display("Task 3 Failed");
 
         $stop;
     end

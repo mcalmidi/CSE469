@@ -1,3 +1,8 @@
+// Akhila Narayanan and Manasvini Calmidi
+// 5/4/2024
+// CSE 469
+// Lab #3
+
 /* imem is the read only, 64 word x 32 bit per word instruction memory for our processor. 
 ** Its module is written in RTL, and it strongly resembles a ROM (read only memory) or LUT 
 ** (look up table). This memory has no clock, and cannot be written to, but rather it 
@@ -20,8 +25,7 @@ module imem(
 
     // modify the name and potentially directory prefix of the file within to load the correct program and preprocessing
 	 // ELEPHANT
-    initial $readmemb("C:/Users/akhil/Desktop/CSE469/lab2/memfile2.dat", memory);
-
+    initial $readmemb("C:/Users/akhil/Desktop/CSE469/lab3/memfile2.dat", memory);
 
     assign instr = memory[addr[31:2]]; // word aligned, drops bottom 2 bits
 

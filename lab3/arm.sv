@@ -54,8 +54,6 @@ module arm (
     assign PCPlus4F = PCF + 'd4;                  // default value to access next instruction
 	
     // update the PC, at rst initialize to 0
-	 // ELEPHANT looking at BNE PC 56 (we assume this is where it's breaking because the cmp before works and task 1 passed)
-	 // when StallF is high, we don't see PCF = PCPrime. Why? We literally set it here.
     always_ff @(posedge clk) begin
         if (rst) PCF <= '0;
         else if (~StallF) PCF <= PCPrime;
@@ -331,7 +329,7 @@ module arm (
 	 assign ResultW = MemtoRegW ? ReadDataW : ALUOutW;    // determine whether final writeback result is from dmemory or alu
 	 
 	 
-	 // HAZARD UNIT ELEPHANT
+	 // HAZARD UNIT
 	 
 	 // Data Forwarding Logic
 	 logic Match_1E_M, Match_2E_M, Match_1E_W, Match_2E_W, Match_WriteAddrs;
@@ -374,8 +372,6 @@ module arm (
     //-------------------------------------------------------------------------------
     //                                      CONTROL
     //-------------------------------------------------------------------------------
-   
-	 // ELEPHANT check that these control signal values are correct
 	 
 	 // Enable ADD, SUB, AND, ORR, LDR, STR, unconditional B, conditional B, and CMP instructions to be executed 
     always_comb begin

@@ -25,7 +25,7 @@ module imem(
 
     // modify the name and potentially directory prefix of the file within to load the correct program and preprocessing
 	 // ELEPHANT
-    initial $readmemb("C:/Users/akhil/Desktop/CSE469/lab3/memfile2.dat", memory);
+    initial $readmemb("C:/Users/akhil/Desktop/CSE469/lab3/memfile3.dat", memory);
 
     assign instr = memory[addr[31:2]]; // word aligned, drops bottom 2 bits
 

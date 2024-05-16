@@ -93,8 +93,8 @@ module testbench();
 //        else                                                 $display("Task 2 Failed");
 
 		  // task 3:
-//			assert(cpu.processor.u_reg_file.memory[2] == 32'd0)  $display("Task 3 Passed");
-//			else                                                 $display("Task 3 Failed");
+			assert(cpu.processor.u_reg_file.memory[2] == 32'd0)  $display("Task 3 Passed");
+			else                                                 $display("Task 3 Failed");
 
         $stop;
     end

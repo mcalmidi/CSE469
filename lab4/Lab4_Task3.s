@@ -8,9 +8,9 @@
 _start:
 
 MOVW R0, #0x0000
-MOVT R0, #0x3F80 // float 1 = 1.0
-MOVW R0, #0x0000
-MOVT R0, #0x3F80 // float 2 = 1.0
+MOVT R0, #0x3FC0 // float 1 = 1.5
+MOVW R1, #0x0000
+MOVT R1, #0x4000 // float 2 = 2.0
 
 // Mask and shift down the 2 exponents.
 MOVW R2, #0x0000
@@ -28,11 +28,11 @@ MOVT R2, #0x007F // Fraction mask
 AND R5, R0, R2 // AND R0 with mask
 AND R6, R1, R2 // AND R1 with mask
 
-MOVW R2, #0xFFFF
-MOVT R2, #0x007F // Mantissa Leading 1 mask
+MOVW R2, #0x0000
+MOVT R2, #0x0080 // Mantissa Leading 1 mask
 
 ORR R5, R5, R2 // Append leading 1 to mantissa of float 1
-ORR R6, R6, R2 // Append leading 1 to mantissa of float 1
+ORR R6, R6, R2 // Append leading 1 to mantissa of float 2
 
 // Compare the exponents by subtracting the smaller from the larger. 
 // Set the exponent of the result to be the larger of the exponents.
@@ -54,33 +54,23 @@ LSR R8, R8, R9 // right shift smaller mantissa by exponent diff
 
 // Sum the mantissas.
 CMP R3, R4
-ADDGT R10, R9, R5 // sum shifted smaller mantissa with non-shifted mantissa
-ADDLE R10, R9, R6
+ADDGT R10, R8, R5 // sum shifted smaller mantissa with non-shifted mantissa
+ADDLE R10, R8, R6
 
 // Normalize the result, i.e., if the sum overflows, right shift by 1 and increment 
-// the exponent by 1.
+// the exponent by 1. Rounding. 
 MOVW R2, #0x0000
 MOVT R2, #0x0100 // Threshold
+AND R11, R10, R2 // clear summed mantissa to see if 24th bit is 1
+CMP R11, #0
+ADDNE R7, R7, #1 // if 24th bit is 1, add 1 to exponent
+LSRNE R10, R10, #1 // if 24th bit is 1, right shift mantissa by 1 (less precise)
 
-CMP R10, R2
-ADDGT R7, R7, #1 // increment larger exponent by 1 if sum is > threshold
-LSRGT R10, R10, #1 // right shift result by 1 if sum > threshold
-
-// Round the result (truncation is fine).
-MOVW R2, #0xFFFF // Rounding mask
-MOVT R2, #0x00FF
+// Strip the leading 1 off the resulting mantissa,
+MOVW R2, #0xFFFF // leading 1 mask
+MOVT R2, #0xFF7F
 AND R10, R10, R2
 
-// Strip the leading 1 off the resulting mantissa, and merge the sign, exponent, 
-// and fraction bits.
-MOVW R11, #0x0000
-MOVT R11, #0x0000 // get a result register that is all 0s (sign will always be 0)
-
+// merge the exponent and mantissa bits. (no need to worry about sign because result is always positive = 0)
 LSL R12, R7, #23 // left shift exponent to correct location
-ORR R11, R11, R12 // merge exponent with result
-
-MOVW R2, #0xFFFF
-MOVT R2, #0x007F // mask to strip leading 1 from mantissa
-AND R10, R10, R2
-
-ORR R11, R11, R10 // merge mantissa with result
+ORR R10, R10, R12 // merge exponent with mantissa
